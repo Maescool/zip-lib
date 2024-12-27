@@ -29,6 +29,20 @@ export interface IZipOptions {
      * The default value is `6`.
      */
     compressionLevel?: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+    /**
+     * Include files that match the given regex pattern.
+     *
+     * By default, all files are included.
+     */
+    include?: string[];
+    /**
+     * Exclude files that match the given regex pattern.
+     *
+     * The exclude option takes precedence over the include option.
+     *
+     * By default, all files are included.
+     */
+    exclude?: string[];
 }
 
 /**
@@ -148,6 +162,9 @@ export class Zip extends Cancelable {
     }
 
     private async addEntry(zip: yazl.ZipFile, entry: exfs.FileEntry, file: ZipEntry, token: CancellationToken): Promise<void> {
+        if (!this.shouldInclude(file.path)) {
+            return;
+        }
         if (entry.isSymbolicLink) {
             if (this.followSymlink()) {
                 if (entry.type === "dir") {
@@ -213,6 +230,9 @@ export class Zip extends Cancelable {
                     if (token.isCancelled) {
                         return;
                     }
+                    if (!this.shouldInclude(entry.path)) {
+                        continue;
+                    }
                     const relativePath = path.relative(folder.path, entry.path);
                     const metadataPath = folder.metadataPath ? path.join(folder.metadataPath, relativePath) : relativePath;
                     await this.addEntry(this.yazlFile, entry, { path: entry.path, metadataPath }, token);
@@ -242,6 +262,25 @@ export class Zip extends Cancelable {
             followSymlink = true;
         }
         return followSymlink;
+    }
+
+    private shouldInclude(filePath: string): boolean {
+        if (this.options?.exclude) {
+            for (const pattern of this.options.exclude) {
+                if (new RegExp(pattern).test(filePath)) {
+                    return false;
+                }
+            }
+        }
+        if (this.options?.include) {
+            for (const pattern of this.options.include) {
+                if (new RegExp(pattern).test(filePath)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return true;
     }
 
     /**

@@ -85,6 +85,30 @@ zl.archiveFolder("path/to/folder", "path/to/target.zip", { compressionLevel: 9 }
 });
 ```
 
+### Include specified entries
+
+```js
+const zl = require("zip-lib");
+
+zl.archiveFolder("path/to/folder", "path/to/target.zip", { include: [".*\.json", ".*\.png"] }).then(function () {
+    console.log("done");
+}, function (err) {
+    console.log(err);
+});
+```
+
+### Exclude specified entries
+
+```js
+const zl = require("zip-lib");
+
+zl.archiveFolder("path/to/folder", "path/to/target.zip", { exclude: ["\.DS_Store"] }).then(function () {
+    console.log("done");
+}, function (err) {
+    console.log(err);
+});
+```
+
 ### Zip multiple files and folders
 
 ```js
